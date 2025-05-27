@@ -9,6 +9,17 @@ pipeline {
                 }
             }
         }
+        stage('Install Node.js') {
+            steps {
+                echo "Installing Node.js and npm..."
+                sh '''
+                    apt-get update
+                    apt-get install -y nodejs npm
+                '''
+                sh 'node -v'
+                sh 'npm -v'
+            }
+        }
         stage('Build Angular App') {
             steps {
                 dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
