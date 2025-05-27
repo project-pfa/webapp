@@ -12,9 +12,9 @@ pipeline {
         stage('Install Node.js') {
             steps {
                 echo "Installing Node.js and npm..."
-                sh '''
-                    apt-get update
-                    apt-get install -y nodejs npm
+                sh  '''
+                     sudo apt-get update
+                     sudo apt-get install -y nodejs npm
                 '''
                 sh 'node -v'
                 sh 'npm -v'
