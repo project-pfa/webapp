@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        NVM_DIR = "${env.WORKSPACE}/.nvm"
+    }
     stages {
         stage('Preparation') {
             steps {
@@ -9,30 +12,42 @@ pipeline {
                 }
             }
         }
-       stage('Install Node.js') {
+
+        stage('Install Node.js') {
             steps {
-                echo "Installing Node.js and npm..."
+                echo "Installing Node.js via NVM..."
                 sh '''
-                   sudo apt-get update
-                   sudo apt-get install -y nodejs npm
-                 '''
-                 sh 'node -v'
-                 sh 'npm -v'
+                    export NVM_DIR="$WORKSPACE/.nvm"
+                    mkdir -p $NVM_DIR
+                    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                    source $NVM_DIR/nvm.sh
+                    nvm install 16
+                    nvm alias default 16
+                    node -v
+                    npm -v
+                '''
             }
-       }
-       stage('Build Angular App') {
+        }
+
+        stage('Build Angular App') {
             steps {
                 dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
-                    sh 'npm install'
-                    sh 'npm run build'
+                    sh '''
+                        export NVM_DIR="$WORKSPACE/.nvm"
+                        source $NVM_DIR/nvm.sh
+                        nvm use 16
+                        npm install
+                        npm run build
+                    '''
                 }
             }
         }
+
         stage('Check workspace') {
-             steps {
-                 sh 'echo "📂 Current directory: $(pwd)"'
-                 sh 'ls -l microservice-source-code/release2/k8s-fleetman-webapp-angular'
-             }
+            steps {
+                sh 'echo "📂 Current directory: $(pwd)"'
+                sh 'ls -l microservice-source-code/release2/k8s-fleetman-webapp-angular'
+            }
         }
 
         stage('Image Build') {
@@ -44,6 +59,7 @@ pipeline {
                 echo "Build complete"
             }
         }
+
         stage('Push Image') {
             steps {
                 echo "Pushing to Docker Hub..."
@@ -54,6 +70,7 @@ pipeline {
                 echo "Push complete"
             }
         }
+
         stage('Deploy') {
             steps {
                 echo "Deploying to Kubernetes"
@@ -67,4 +84,4 @@ pipeline {
         }
     }
 }
- 
+
