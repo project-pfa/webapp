@@ -28,6 +28,13 @@ pipeline {
                 }
             }
         }
+        stage('Check workspace') {
+             steps {
+                 sh 'echo "📂 Current directory: $(pwd)"'
+                 sh 'ls -l microservice-source-code/release2/k8s-fleetman-webapp-angular'
+             }
+        }
+
         stage('Image Build') {
             steps {
                 echo "Building Docker image..."
