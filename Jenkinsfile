@@ -15,12 +15,12 @@ pipeline {
 
         stage('Install Node.js') {
             steps {
-                echo "Installing Node.js via NVM..."
+                echo "Installation de Node.js via NVM..."
                 sh '''
                     export NVM_DIR="$WORKSPACE/.nvm"
                     mkdir -p $NVM_DIR
                     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-                    source $NVM_DIR/nvm.sh
+                    . $NVM_DIR/nvm.sh
                     nvm install 16
                     nvm alias default 16
                     node -v
@@ -34,7 +34,7 @@ pipeline {
                 dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
                     sh '''
                         export NVM_DIR="$WORKSPACE/.nvm"
-                        source $NVM_DIR/nvm.sh
+                        . $NVM_DIR/nvm.sh
                         nvm use 16
                         npm install
                         npm run build
@@ -45,43 +45,42 @@ pipeline {
 
         stage('Check workspace') {
             steps {
-                sh 'echo "📂 Current directory: $(pwd)"'
+                sh 'echo "📂 Répertoire actuel : $(pwd)"'
                 sh 'ls -l microservice-source-code/release2/k8s-fleetman-webapp-angular'
             }
         }
 
         stage('Image Build') {
             steps {
-                echo "Building Docker image..."
+                echo "Construction de l'image Docker..."
                 dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
                     sh 'docker build -t ghada13/webapp:${commit_id} .'
                 }
-                echo "Build complete"
+                echo "Construction terminée"
             }
         }
 
         stage('Push Image') {
             steps {
-                echo "Pushing to Docker Hub..."
+                echo "Pousser vers Docker Hub..."
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                     sh 'docker push ghada13/webapp:${commit_id}'
                 }
-                echo "Push complete"
+                echo "Pousse terminée"
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "Deploying to Kubernetes"
+                echo "Déploiement vers Kubernetes"
                 dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
                     sh "sed -i 's|richardchesterwood/k8s-fleetman-webapp-angular:release2|ghada13/webapp:${commit_id}|' manifests/webapp.yaml"
                     sh 'kubectl apply -f manifests/'
                     sh 'kubectl get pods -n default'
                 }
-                echo "Deployment complete"
+                echo "Déploiement terminé"
             }
         }
     }
 }
-
