@@ -13,10 +13,20 @@ pipeline {
             }
         }
 
+        stage('Check Workspace After Checkout') {
+            steps {
+                sh '''
+                    echo "Exploration de l'espace de travail : $(pwd)"
+                    find . -name "package.json"
+                '''
+            }
+        }
+
         stage('Install Node.js') {
             steps {
                 echo "Installation de Node.js via NVM..."
                 sh '''
+                    #!/bin/bash
                     export NVM_DIR="$WORKSPACE/.nvm"
                     mkdir -p $NVM_DIR
                     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -29,30 +39,32 @@ pipeline {
             }
         }
 
-       stage('Build Angular App') {
-    steps {
-        dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
-            sh '''
-                #!/bin/bash
-                if [ ! -f "package.json" ]; then
-                    echo "Erreur : package.json non trouvé !"
-                    exit 1
-                fi
-                export NVM_DIR="$WORKSPACE/.nvm"
-                if [ ! -f "$NVM_DIR/nvm.sh" ]; then
-                    echo "Erreur : nvm.sh non trouvé !"
-                    exit 1
-                fi
-                . $NVM_DIR/nvm.sh
-                nvm use 16 || { echo "Erreur : nvm use 16 a échoué"; exit 1; }
-                node -v || { echo "Erreur : node non trouvé"; exit 1; }
-                npm -v || { echo "Erreur : npm non trouvé"; exit 1; }
-                npm install || { echo "Erreur : npm install a échoué"; exit 1; }
-                npm run build || { echo "Erreur : npm run build a échoué"; exit 1; }
-            '''
+        stage('Build Angular App') {
+            steps {
+                dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
+                    sh '''
+                        #!/bin/bash
+                        echo "Répertoire actuel : $(pwd)"
+                        ls -la
+                        if [ ! -f "package.json" ]; then
+                            echo "Erreur : package.json non trouvé !"
+                            exit 1
+                        fi
+                        export NVM_DIR="$WORKSPACE/.nvm"
+                        if [ ! -f "$NVM_DIR/nvm.sh" ]; then
+                            echo "Erreur : nvm.sh non trouvé !"
+                            exit 1
+                        fi
+                        . $NVM_DIR/nvm.sh
+                        nvm use 16 || { echo "Erreur : nvm use 16 a échoué"; exit 1; }
+                        node -v || { echo "Erreur : node non trouvé"; exit 1; }
+                        npm -v || { echo "Erreur : npm non trouvé"; exit 1; }
+                        npm install || { echo "Erreur : npm install a échoué"; exit 1; }
+                        npm run build || { echo "Erreur : npm run build a échoué"; exit 1; }
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Check workspace') {
             steps {
