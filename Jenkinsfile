@@ -29,19 +29,30 @@ pipeline {
             }
         }
 
-        stage('Build Angular App') {
-            steps {
-                dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
-                    sh '''
-                        export NVM_DIR="$WORKSPACE/.nvm"
-                        . $NVM_DIR/nvm.sh
-                        nvm use 16
-                        npm install
-                        npm run build
-                    '''
-                }
-            }
+       stage('Build Angular App') {
+    steps {
+        dir('microservice-source-code/release2/k8s-fleetman-webapp-angular') {
+            sh '''
+                #!/bin/bash
+                if [ ! -f "package.json" ]; then
+                    echo "Erreur : package.json non trouvé !"
+                    exit 1
+                fi
+                export NVM_DIR="$WORKSPACE/.nvm"
+                if [ ! -f "$NVM_DIR/nvm.sh" ]; then
+                    echo "Erreur : nvm.sh non trouvé !"
+                    exit 1
+                fi
+                . $NVM_DIR/nvm.sh
+                nvm use 16 || { echo "Erreur : nvm use 16 a échoué"; exit 1; }
+                node -v || { echo "Erreur : node non trouvé"; exit 1; }
+                npm -v || { echo "Erreur : npm non trouvé"; exit 1; }
+                npm install || { echo "Erreur : npm install a échoué"; exit 1; }
+                npm run build || { echo "Erreur : npm run build a échoué"; exit 1; }
+            '''
         }
+    }
+}
 
         stage('Check workspace') {
             steps {
